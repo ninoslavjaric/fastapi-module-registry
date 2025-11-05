@@ -1,0 +1,52 @@
+name: Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      APP_NAME:
+        description: "App name"
+        required: false
+        default: "myapp"
+      PORT:
+        description: "Port"
+        required: false
+        default: "8000"
+      DB_URL:
+        description: "Database URL"
+        required: false
+        default: "sqlite:///db.sqlite3"
+      DEBUG:
+        description: "Debug"
+        required: false
+        default: "0"
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up Docker Compose
+        uses: ndeloof/install-compose-action@v1
+
+      - name: Set execute permission for deploy.sh
+        run: chmod +x ./deploy.sh
+
+      - name: Generate .env from .env.example (inputs/secrets)
+        run: |
+          cp .env.example .env
+          for var in APP_NAME PORT DB_URL DEBUG; do
+            value="${{ github.event.inputs[var] || secrets[var] }}"
+            sed -i "s|@@${var}@@|$value|g" .env
+          done
+
+      - name: Run deploy.sh with test param
+        run: ./deploy.sh test

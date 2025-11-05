@@ -43,10 +43,10 @@ jobs:
       - name: Generate .env from .env.example (inputs/secrets)
         run: |
           cp .env.example .env
-          for var in APP_NAME PORT DB_URL DEBUG; do
-            value="${{ github.event.inputs[var] || secrets[var] }}"
-            sed -i "s|@@${var}@@|$value|g" .env
-          done
+          sed -i "s|@@APP_NAME@@|${{ github.event.inputs.APP_NAME || secrets.APP_NAME }}|g" .env
+          sed -i "s|@@PORT@@|${{ github.event.inputs.PORT || secrets.PORT }}|g" .env
+          sed -i "s|@@DB_URL@@|${{ github.event.inputs.DB_URL || secrets.DB_URL }}|g" .env
+          sed -i "s|@@DEBUG@@|${{ github.event.inputs.DEBUG || secrets.DEBUG }}|g" .env
 
       - name: Run deploy.sh with test param
         run: ./deploy.sh test

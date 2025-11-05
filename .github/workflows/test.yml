@@ -27,6 +27,11 @@ on:
 jobs:
   run-tests:
     runs-on: ubuntu-latest
+    env:
+      APP_NAME: ${{ secrets.APP_NAME || github.event.inputs.APP_NAME || 'myapp' }}
+      PORT: ${{ secrets.PORT || github.event.inputs.PORT || '8000' }}
+      DB_URL: ${{ secrets.DB_URL || github.event.inputs.DB_URL || 'sqlite:///db.sqlite3' }}
+      DEBUG: ${{ secrets.DEBUG || github.event.inputs.DEBUG || '0' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,18 +40,28 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Set up Docker Compose
-        uses: ndeloof/install-compose-action@v1
+        uses: ndeloof/install-compose-action@v0.0.1
 
       - name: Set execute permission for deploy.sh
         run: chmod +x ./deploy.sh
 
-      - name: Generate .env from .env.example (inputs/secrets)
+      - name: Generate .env from .env.example (inputs/secrets/defaults)
         run: |
           cp .env.example .env
-          sed -i "s|@@APP_NAME@@|${{ github.event.inputs.APP_NAME || secrets.APP_NAME }}|g" .env
-          sed -i "s|@@PORT@@|${{ github.event.inputs.PORT || secrets.PORT }}|g" .env
-          sed -i "s|@@DB_URL@@|${{ github.event.inputs.DB_URL || secrets.DB_URL }}|g" .env
-          sed -i "s|@@DEBUG@@|${{ github.event.inputs.DEBUG || secrets.DEBUG }}|g" .env
+          sed -i "s|@@APP_NAME@@|${{ secrets.APP_NAME || github.event.inputs.APP_NAME || 'myapp' }}|g" .env
+          sed -i "s|@@PORT@@|${{ secrets.PORT || github.event.inputs.PORT || '8000' }}|g" .env
+          sed -i "s|@@DB_URL@@|${{ secrets.DB_URL || github.event.inputs.DB_URL || 'sqlite:///db.sqlite3' }}|g" .env
+          sed -i "s|@@DEBUG@@|${{ secrets.DEBUG || github.event.inputs.DEBUG || '0' }}|g" .env
 
       - name: Run deploy.sh with test param
-        run: ./deploy.sh test
+        env:
+          PORT: ${{ secrets.PORT || github.event.inputs.PORT }}
+        run: ./deploy.sh test | tee test-output.log
+
+      - name: Add test output to summary
+        if: always()
+        run: |
+          echo '### 🔥 Test.sh Output' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat test-output.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

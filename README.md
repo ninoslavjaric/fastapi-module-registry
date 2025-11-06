@@ -1,3 +1,5 @@
+[![Tests](https://github.com/ninoslavjaric/fastapi-module-registry/actions/workflows/test.yml/badge.svg)](https://github.com/ninoslavjaric/fastapi-module-registry/actions/workflows/test.yml)
+
 # fastapi-module-registry
 
 A FastAPI-based project with Dockerized deployment, automated testing, and GitHub Actions CI.
